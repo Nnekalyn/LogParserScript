@@ -1,0 +1,27 @@
+
+[tool.ruff]
+
+# Python version will match my GitHub Actions
+# with the latets Python syntax patterns
+target-version = "py311"
+
+# industry standard line length for readability
+line-length = 88
+
+[tool.ruff.lint]
+
+select = [
+    "E", # pycodestyle errors (formatting bugs, bad spacings)
+    "W", # pycodestyle warnings
+    "F", # Pyflakes (syntax flaws, undefined names, unused variables)
+    "I", # isort (auto sort import statements)
+    "B", # flak8-bugbear (common design flaws)
+
+]
+
+ignore = ["E203"]
+
+unfixable = ["F401"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true

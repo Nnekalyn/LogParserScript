@@ -1,0 +1,38 @@
+# .YAML file to provision an ephemeral Ubuntu sandbox with Ruff every time a PR is opened.
+
+name: Script Validation Gatekeeper
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [main,master,feature/* ]
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: '3.11'
+
+    - name: Install Linting & Testing Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff pytest
+
+    - name: Run Static Code Analysis (Ruff)
+      run: |
+        # Check for errors and formatting issues simultaneously
+        ruff check .
+
+    - name: Execute Mock Environment Validation
+      run: |
+        echo "Running automated resiliency checks..."
+        # This will call your test suite once written
+        # pytest tests/

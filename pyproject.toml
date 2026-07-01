@@ -6,7 +6,7 @@
 target-version = "py311"
 
 # industry standard line length for readability
-line-lenth = 88
+line-length = 88
 
 [tool.ruff.lint]
 

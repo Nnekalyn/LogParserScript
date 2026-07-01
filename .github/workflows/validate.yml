@@ -4,7 +4,7 @@ name: Script Validation Gatekeeper
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, feature/* ]
 
 jobs:
   validate-and-test:

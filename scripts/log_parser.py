@@ -3,6 +3,7 @@
 import os
 import re
 
+
 def directory_sweeper(path):
     """Filter out files by extension & readability.
     Inputs: directory path to unorganized log files
@@ -42,7 +43,7 @@ def parsing_gate(file_path):
                         print(f"File {file_path} | Line {line_num}: MALFORMED LOG")
                         continue
                     date, log_level, message = log.group(1), log.group(2), log.group(3)
-                    print(f"    -> SUCCESS: found [{log_level}] message: {message}")
+                    print(f"    -> SUCCESS: found {date} [{log_level}] message: {message}")
                 except Exception as e:
                     print(f"Unexpected error parsing line {line_num}: {e}")
                     continue

@@ -1,10 +1,10 @@
 #Log Parser
+import datetime
+import json
 import os
+import platform
 import re
 from collections import Counter
-import json
-import datetime
-import platform
 
 
 def directory_sweeper(path):
@@ -68,9 +68,13 @@ def parsing_gate(file_path):
             "parsed_records": local_records
         }
     except PermissionError:
-        return {"status": "failed", "log_level": Counter(), "malformed": [],"parsed_records": []}
+        return {"status": "failed", "log_level": Counter(),
+                "malformed": [],"parsed_records": []
+                }
     except FileNotFoundError:
-        return {"status": "failed", "log_level": Counter(), "malformed": [],"parsed_records": []}
+        return {"status": "failed", "log_level": Counter(),
+                "malformed": [],"parsed_records": []
+                }
 
 def generate_cli_dashboard(total_files, log_counts, malformed_records, parsed_records):
     """Channel 1: Prints a clean, human-readable terminal summary."""

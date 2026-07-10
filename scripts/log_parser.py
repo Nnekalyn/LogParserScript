@@ -1,10 +1,10 @@
 #Log Parser
-
 import os
 import re
-import json
 from collections import Counter
+import json
 import datetime
+import platform
 
 
 def directory_sweeper(path):
@@ -39,6 +39,7 @@ def directory_sweeper(path):
 def parsing_gate(file_path):
     local_counts = Counter()
     local_malformed = []
+    local_records = []
     try:
         with open(file_path, 'r') as file:
             for line_num, line in enumerate(file, 1):
@@ -52,18 +53,70 @@ def parsing_gate(file_path):
                         continue
                     date, log_level, message = log.group(1), log.group(2), log.group(3)
                     local_counts[log_level] += 1
+                    local_records.append({
+                        "date": date,
+                        "level": log_level,
+                        "message": message
+                    })
                 except Exception as e:
                     print(f"Unexpected error parsing line {line_num}: {e}")
                     continue
         return {
             "status": "success",
             "log_level": local_counts,
-            "malformed": local_malformed
+            "malformed": local_malformed,
+            "parsed_records": local_records
         }
     except PermissionError:
-        return {"status": "failed", "log_level": Counter(), "malformed": []}
+        return {"status": "failed", "log_level": Counter(), "malformed": [],"parsed_records": []}
     except FileNotFoundError:
-        return {"status": "failed", "log_level": Counter(), "malformed": []}
+        return {"status": "failed", "log_level": Counter(), "malformed": [],"parsed_records": []}
+
+def generate_cli_dashboard(total_files, log_counts, malformed_records, parsed_records):
+    """Channel 1: Prints a clean, human-readable terminal summary."""
+    print("=" * 60)
+    print("                CLI METRICS SUMMARY                 ")
+    print("=" * 60)
+    print(f"Total Files Processed Successfully: {total_files}")
+    print("-" * 60)
+    print("LOG LEVEL METRICS TOTALS:")
+    for level, count in log_counts.items():
+        print(f"  - {level}: {count}")
+    print("-" * 60)
+    print(f"Total Malformed Rows Flagged: {len(malformed_records)}")
+    print("=" * 60 + "\n")
+
+    print("=" * 60)
+    print("             CRITICAL INCIDENT TIMELINE FEED            ")
+    print("=" * 60)
+
+    for record in parsed_records:
+        if record["level"] in ["ERROR", "CRITICAL", "WARNING"]:
+            print(f"[{record['date']}] LOG_LEVEL: {record['level']}")
+            print(f" └── ALERT MESSAGE: {record['message']}")
+            print("-" * 60)
+
+
+def generate_json_payload(output_filename, total_files_processed,global_log_counts,
+                          global_malformed_records, global_parsed_records):
+    """Channel 2: Exports structured telemetry for ServiceNow ingestion."""
+    current_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    service_now_payload = {
+        "system_name": platform.node(),
+        "timestamp": current_timestamp,
+        "incident_telemetry": global_parsed_records,
+        "summary": {
+            "files_scanned": total_files_processed,
+            "total_logs_by_level": dict(global_log_counts),
+            "total_malformed_count": len(global_malformed_records),
+        },
+        "malformed_telemetry": global_malformed_records,
+    }
+
+    with open(output_filename, "w") as json_file:
+        json.dump(service_now_payload, json_file, indent=4)
+        print(f"Successfully generated '{output_filename}' for ServiceNow ingestion.")
 
 if __name__ == "__main__":
 
@@ -73,6 +126,8 @@ if __name__ == "__main__":
     total_files_processed = 0
     global_log_counts = Counter()
     global_malformed_records = []
+    global_parsed_records = []
+
 
     print("---Ingestion Pipeline Active---\n")
 
@@ -83,5 +138,24 @@ if __name__ == "__main__":
             total_files_processed += 1
         global_log_counts.update(file_metrics["log_level"])
         global_malformed_records.extend(file_metrics["malformed"])
+        global_parsed_records.extend(file_metrics["parsed_records"])
 
+    generate_cli_dashboard(
+        total_files_processed,
+        global_log_counts,
+        global_malformed_records,
+        global_parsed_records
+    )
+
+    folder_context = os.path.basename(os.path.normpath(path))
+    time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = f"triage_{folder_context}_{time_stamp}.json"
+
+    generate_json_payload(
+        output_filename,
+        total_files_processed,
+        global_log_counts,
+        global_malformed_records,
+        global_parsed_records,
+    )
     print("\n--- Pipeline Complete ---")

@@ -21,8 +21,14 @@ def parse_cli_arguments():
     parser.add_argument("target_dir", help = "Path to the unorganized target dir "
                                              "to sweep for logs", type = dir_validation
                         )
+    parser.add_argument("-o", "--output", help = "Optional destination path to"
+                                                 " write structured JSON report",
+                        default = None
+                        )
     args = parser.parse_args()
-    return args.target_dir
+    path = args.target_dir
+    output = args.output
+    return path, output
 
 
 def directory_sweeper(path):
@@ -148,7 +154,7 @@ if __name__ == "__main__":
     global_malformed_records = []
     global_parsed_records = []
 
-    path = str(parse_cli_arguments())
+    path, output = parse_cli_arguments()
 
     print("---Ingestion Pipeline Active---\n")
 
@@ -179,4 +185,5 @@ if __name__ == "__main__":
         global_malformed_records,
         global_parsed_records,
     )
+
     print("\n--- Pipeline Complete ---")

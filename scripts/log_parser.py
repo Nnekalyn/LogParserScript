@@ -1,5 +1,5 @@
 #Log Parser
-"removed"
+import argparse
 import datetime
 import json
 import os
@@ -13,6 +13,16 @@ def dir_validation(path):
     if not os.path.isdir(path):
         raise argparse.ArgumentTypeError(f"{path} is not a directory")
     return path
+
+def parse_cli_arguments():
+    parser = argparse.ArgumentParser(
+        description = "Flat Directory Log Parser"
+    )
+    parser.add_argument("target_dir", help = "Path to the unorganized target dir "
+                                             "to sweep for logs", type = dir_validation
+                        )
+    args = parser.parse_args()
+    return args.target_dir
 
 
 def directory_sweeper(path):
@@ -138,10 +148,9 @@ if __name__ == "__main__":
     global_malformed_records = []
     global_parsed_records = []
 
-    path = input("Provide path: ")
-    print("---Ingestion Pipeline Active---\n")
+    path = str(parse_cli_arguments())
 
-    dir_validation(path)
+    print("---Ingestion Pipeline Active---\n")
 
     for path_to_parse in directory_sweeper(path):
         file_metrics = parsing_gate(path_to_parse)

@@ -1,10 +1,18 @@
 #Log Parser
+import argparse
 import datetime
 import json
 import os
 import platform
 import re
 from collections import Counter
+
+def dir_validation(path):
+    if not os.path.exists(path):
+        raise argparse.ArgumentTypeError(f"{path} does not exist")
+    if not os.path.isdir(path):
+        raise argparse.ArgumentTypeError(f"{path} is not a directory")
+    return path
 
 
 def directory_sweeper(path):
@@ -125,15 +133,17 @@ def generate_json_payload(output_filename, total_files_processed,global_log_coun
 if __name__ == "__main__":
 
     # test directory
-    path = "/Users/neeks/PycharmProjects/LogParserScript/tests"
+    #path = "/Users/neeks/PycharmProjects/LogParserScript/tests"
 
     total_files_processed = 0
     global_log_counts = Counter()
     global_malformed_records = []
     global_parsed_records = []
 
-
+    path = input("Provide path: ")
     print("---Ingestion Pipeline Active---\n")
+
+    dir_validation(path)
 
     for path_to_parse in directory_sweeper(path):
         file_metrics = parsing_gate(path_to_parse)

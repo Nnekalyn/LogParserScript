@@ -1,0 +1,77 @@
+{
+    "system_name": "Nneka-MBP2.local",
+    "timestamp": "2026-07-13T15:27:14.926761+00:00",
+    "incident_telemetry": [
+        {
+            "date": "2026-07-09",
+            "level": "INFO",
+            "message": "Application started successfully."
+        },
+        {
+            "date": "2026-07-09",
+            "level": "WARNING",
+            "message": "High memory utilization detected."
+        },
+        {
+            "date": "2026-07-09",
+            "level": "INFO",
+            "message": "Database connection pooling initialized."
+        },
+        {
+            "date": "2026-07-09",
+            "level": "INFO",
+            "message": "User logged in from IP 192.168.1.50."
+        },
+        {
+            "date": "2026-07-09",
+            "level": "ERROR",
+            "message": "Connection timed out on port 443."
+        },
+        {
+            "date": "2026-07-09",
+            "level": "CRITICAL",
+            "message": "Core temperature exceeds threshold."
+        },
+        {
+            "date": "2026-07-09",
+            "level": "INFO",
+            "message": "Fan speed adjusted to maximum."
+        }
+    ],
+    "summary": {
+        "files_scanned": 9,
+        "total_logs_by_level": {
+            "INFO": 4,
+            "WARNING": 1,
+            "ERROR": 1,
+            "CRITICAL": 1
+        },
+        "total_malformed_count": 6
+    },
+    "malformed_telemetry": [
+        {
+            "file": "/users/neeks/pycharmprojects/logparserscript/tests/file.txt",
+            "line": 1
+        },
+        {
+            "file": "/users/neeks/pycharmprojects/logparserscript/tests/syslog.log",
+            "line": 1
+        },
+        {
+            "file": "/users/neeks/pycharmprojects/logparserscript/tests/no_extension_file",
+            "line": 1
+        },
+        {
+            "file": "/users/neeks/pycharmprojects/logparserscript/tests/hexa_output",
+            "line": 1
+        },
+        {
+            "file": "/users/neeks/pycharmprojects/logparserscript/tests/mixed_payload.txt",
+            "line": 2
+        },
+        {
+            "file": "/users/neeks/pycharmprojects/logparserscript/tests/mybinaryfile",
+            "line": 1
+        }
+    ]
+}

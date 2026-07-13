@@ -1,0 +1,16 @@
+{
+    "system_name": "Nneka-MBP2.local",
+    "timestamp": "2026-07-13T15:51:31.878251+00:00",
+    "incident_telemetry": [],
+    "summary": {
+        "files_scanned": 1,
+        "total_logs_by_level": {},
+        "total_malformed_count": 1
+    },
+    "malformed_telemetry": [
+        {
+            "file": "/users/neeks/pycharmprojects/gitpractice/sample.txt",
+            "line": 1
+        }
+    ]
+}

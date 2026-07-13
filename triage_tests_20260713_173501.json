@@ -1,6 +1,6 @@
 {
     "system_name": "Nneka-MBP2.local",
-    "timestamp": "2026-07-13T19:24:09.031423+00:00",
+    "timestamp": "2026-07-13T21:35:01.399452+00:00",
     "incident_telemetry": [
         {
             "date": "2026-07-09",
@@ -50,27 +50,27 @@
     },
     "malformed_telemetry": [
         {
-            "file": "/users/neeks/pycharmprojects/logparserscript/tests/file.txt",
+            "file": "tests/file.txt",
             "line": 1
         },
         {
-            "file": "/users/neeks/pycharmprojects/logparserscript/tests/syslog.log",
+            "file": "tests/syslog.log",
             "line": 1
         },
         {
-            "file": "/users/neeks/pycharmprojects/logparserscript/tests/no_extension_file",
+            "file": "tests/no_extension_file",
             "line": 1
         },
         {
-            "file": "/users/neeks/pycharmprojects/logparserscript/tests/hexa_output",
+            "file": "tests/hexa_output",
             "line": 1
         },
         {
-            "file": "/users/neeks/pycharmprojects/logparserscript/tests/mixed_payload.txt",
+            "file": "tests/mixed_payload.txt",
             "line": 2
         },
         {
-            "file": "/users/neeks/pycharmprojects/logparserscript/tests/mybinaryfile",
+            "file": "tests/mybinaryfile",
             "line": 1
         }
     ]

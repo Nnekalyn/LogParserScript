@@ -1,5 +1,5 @@
 #Log Parser
-import argparse
+"removed"
 import datetime
 import json
 import os
@@ -132,8 +132,6 @@ def generate_json_payload(output_filename, total_files_processed,global_log_coun
 
 if __name__ == "__main__":
 
-    # test directory
-    #path = "/Users/neeks/PycharmProjects/LogParserScript/tests"
 
     total_files_processed = 0
     global_log_counts = Counter()

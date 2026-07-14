@@ -174,23 +174,15 @@ if __name__ == "__main__":
         global_parsed_records
     )
 
-
-
     folder_context = os.path.basename(os.path.normpath(path))
     time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     if output == None:
         output_filename = f"triage_{folder_context}_{time_stamp}.json"
-
     else:
+        os.makedirs(output, exist_ok=True)
         folder_location = output
         file_name = f"triage_{folder_context}_{time_stamp}.json"
         output_filename = os.path.join(folder_location, file_name)
-
-    """folder_location = os.path.dirname(output)
-    folder_context = os.path.basename(os.path.normpath(path))
-    time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_filename = f"triage_{folder_context}_{time_stamp}.json"
-    """
 
     generate_json_payload(
         output_filename,

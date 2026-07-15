@@ -1,112 +1,117 @@
-# Resilient Log Telemetry & API Payload Pipeline
+# Log Parser
 
-This memory-efficient script parses logs from a directory using regex groups, isolates binary files, aggregates cross-file analytics, and outputs notable logs in both a CLI summary and an API-ready .json file (for, as an example, ServiceNow). 
+A command-line tool that sweeps a flat directory of log files, parses each line against a standard log format, and produces both a human-readable CLI summary and a structured JSON telemetry report.
 
-
-
-## DFD
-```
-                [ Raw Target Directory ]
-                          │
-            ▲             ▼
- MODULE 1   │   ┌───────────────────┐
-Sweeper Gate│   │ directory_sweeper │ ──(Drops hidden binary traps)
-            │   └───────────────────┘
-                          │  (Yields 1 Clean File Path at a time)
-                          ▼
- MODULE 2   │   ┌───────────────────┐
-Parser Gate │   │   parsing_gate    │ ──(Catches Permission/Line Errors)
-            ▼   └───────────────────┘
-                          │  (Returns Local Metric Dicts)
-                          ▼
-            ┌───────────────────────────┐
- MODULE 3   │ Global Accumulator Ledger │ ──(Orchestrator Management)
-            └───────────────────────────┘
-                          │
-             ┌────────────┴────────────┐
-             ▼                         ▼
-   ┌───────────────────┐     ┌───────────────────┐
-   │   CLI Dashboard   │     │ API JSON Payload  │
-   │ (Manual Triage)   │     │ (ServiceNow Ingest)
-   └───────────────────┘     └───────────────────┘
-
-   ```
 ## Features
-Zero-Memory Footprint Streamer: Implements a Python generator framework via os.scandir(), allowing the engine to sweep millions of files without overloading system RAM.
 
-Binary Trap Mitigation: Inspects the initial byte headers of extensionless files (file.read(1)) to trap and bypass compressed binaries, completely avoiding fatal runtime parsing crashes.
+- Recursively-free (flat) directory sweep for `.txt`, `.log`, and extensionless files
+- Regex-based extraction of date, log level, and message from each line
+- Aggregated counts per log level across all files
+- Malformed line tracking (file + line number) for anything that doesn't match the expected format
+- CLI dashboard highlighting `ERROR`, `CRITICAL`, and `WARNING` entries
+- JSON export suitable for downstream ingestion pipelines
 
-Decoupled Local/Global State Architecture: Isolates file-level analytics within local tracking scopes (Counter) to ensure runtime faults within one file never corrupt the system metrics ledger.
+## Requirements
 
-Data Formatting: ISO 8601 dynamic UTC timestamps
+- Python 3.6+
+- No third-party dependencies (uses only the standard library: `argparse`, `datetime`, `json`, `platform`, `os`, `re`, `collections`)
 
-Language: Python 3.10+ (Zero external third-party dependencies required)
+## Usage
 
-
-
-
-## Output Example
-
-
-### CLI Dashboard
-When executed, the pipeline prints a real-time, human-readable triage feed directly to the terminal:
-
-```text
-============================================================
-                CLI METRICS SUMMARY                 
-============================================================
-Total Files Processed Successfully: 4
-------------------------------------------------------------
-LOG LEVEL METRICS TOTALS:
-  - INFO: 24
-  - WARNING: 3
-  - ERROR: 2
-  - CRITICAL: 1
-------------------------------------------------------------
-Total Malformed Rows Flagged: 1
-============================================================
-
-============================================================
-             CRITICAL INCIDENT TIMELINE FEED            
-============================================================
-[2026-07-10] LOG_LEVEL: CRITICAL
- └── ALERT MESSAGE: Core temperature exceeds threshold.
-------------------------------------------------------------
+```bash
+python log_parser.py <target_dir> [-o OUTPUT_DIR]
 ```
 
-### ServiceNow API Target Payload
-The pipeline automatically generates an API-ready JSON artifact mapping the global system telemetry:
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `target_dir` | Yes | Path to the directory containing log files to sweep. Must exist and be a directory. |
+| `-o`, `--output` | No | Destination directory for the JSON report. If omitted, the report is written to the current working directory. |
+
+### Examples
+
+Parse logs in `./logs` and write the JSON report to the current directory:
+
+```bash
+python log_parser.py ./logs
+```
+
+Parse logs and write the JSON report to a specific output folder (created if it doesn't exist):
+
+```bash
+python log_parser.py ./logs -o ./reports
+```
+
+## Expected Log Line Format
+
+Each line in a log file is matched against:
+
+```
+YYYY-MM-DD [LEVEL] message text
+```
+
+Example:
+
+```
+2026-07-15 [ERROR] Database connection timed out
+2026-07-15 [INFO] Health check passed
+```
+
+Lines that don't match this pattern are recorded as **malformed** (file + line number) rather than dropped silently.
+
+## Which Files Get Parsed
+
+`directory_sweeper` scans the target directory (non-recursively) and includes a file if either is true:
+
+1. The filename ends in `.txt` or `.log` (case-insensitive), **or**
+2. The filename has no extension at all (no `.` in the name)
+
+Symlinks are skipped. Files with any other extension (e.g. `.csv`, `.json`) are ignored.
+
+Whether a file can actually be *opened and read* as text is not checked at this stage — that responsibility belongs to `parsing_gate`, which handles `PermissionError`, `FileNotFoundError`, and `UnicodeDecodeError` for files it can't process, and reports them as failed rather than crashing the pipeline.
+
+## Output
+
+### 1. CLI Dashboard
+
+Printed to the terminal after processing completes:
+
+- Total files processed successfully
+- Total count per log level
+- Total malformed row count
+- A timeline feed of every `ERROR`, `CRITICAL`, and `WARNING` record, in the order encountered
+
+### 2. JSON Report
+
+Written to `triage_<folder_name>_<timestamp>.json`, containing:
 
 ```json
 {
-    "system_name": "production-app-srv-02",
-    "timestamp": "2026-07-10T14:28:05.109283+00:00",
-    "incident_telemetry": [
-        {
-            "date": "2026-07-10",
-            "level": "CRITICAL",
-            "message": "Core temperature exceeds threshold."
-        }
-    ],
-    "summary": {
-        "files_scanned": 4,
-        "total_logs_by_level": {
-            "INFO": 24,
-            "WARNING": 3,
-            "ERROR": 2,
-            "CRITICAL": 1
-        },
-        "total_malformed_count": 1
-    },
-    "malformed_telemetry": [
-        {"file": "/var/log/tests/mixed_payload.txt", "line": 2}
-    ]
+  "system_name": "hostname",
+  "timestamp": "ISO-8601 UTC timestamp",
+  "incident_telemetry": [ /* every successfully parsed record */ ],
+  "summary": {
+    "files_scanned": 0,
+    "total_logs_by_level": { "INFO": 0, "ERROR": 0 },
+    "total_malformed_count": 0
+  },
+  "malformed_telemetry": [ /* file + line number for each malformed row */ ]
 }
 ```
-## Next Steps
 
-Currently, this program uses hard-coded paths. The next steps are to remove the hardcoded paths and inject configuration data using CLI arguments and environment variables.
+The filename is derived from the swept folder's basename and the run timestamp, e.g. `triage_logs_20260715_143000.json`.
 
+## Exit Behavior
+
+- If `target_dir` doesn't exist or isn't a directory, the script exits with status code 2 (via `argparse`) before any processing occurs.
+- A file that fails to open (permission denied, not found, or undecodable) does not stop the pipeline — it's counted as failed and processing continues with the next file.
+
+## Known Limitations
+
+- The sweep is **flat only** — it does not recurse into subdirectories.
+- Files are opened without an explicit encoding, so behavior may vary slightly across platforms with different default encodings.
+- A `UnicodeDecodeError` encountered partway through a file (after some lines were already parsed successfully) discards that file's partial results rather than keeping what was parsed before the error.
 ## Authors
 
 - [@NnekaLyn](https://www.github.com/nnekalyn)

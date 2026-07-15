@@ -11,6 +11,64 @@ A command-line tool that sweeps a flat directory of log files, parses each line 
 - CLI dashboard highlighting `ERROR`, `CRITICAL`, and `WARNING` entries
 - JSON export suitable for downstream ingestion pipelines
 
+## DFD
+```text
+( User / CLI Invocation )
+                                         |
+                                         | target_dir, -o output
+                                         v
+                    +----------------------------------------+
+                    | P1: parse_cli_arguments / dir_validation|
+                    |  - validate target_dir exists & is dir |
+                    +----------------------------------------+
+                                         |
+                                         | validated path
+                                         v
+                    +----------------------------------------+
+                    | P2: directory_sweeper                  |
+                    |  - scan directory entries               |
+                    |  - filter by .txt/.log or no extension  |
+                    +----------------------------------------+
+                                         |
+                                         | file_path (per qualifying file)
+                                         v
+                    +----------------------------------------+
+                    | P3: parsing_gate                        |
+                    |  - open file                            |
+                    |  - match line against DATE [LEVEL] MSG  |
+                    |  - split into matched / malformed        |
+                    +----------------------------------------+
+                       |            |              |
+          success/fail |   match    |  no match    |
+                       v            v              v
+              +----------------+ +----------------+ +---------------------+
+              | [Data Store]   | | [Data Store]   | | [Data Store]        |
+              | total_files_   | | global_log_    | | global_parsed_      |
+              | processed      | | counts         | | records             |
+              +----------------+ +----------------+ +---------------------+
+                                                              ^
+                                                              |
+                                                    +---------------------+
+                                                    | [Data Store]        |
+                                                    | global_malformed_   |
+                                                    | records             |
+                                                    +---------------------+
+                        |            |                |            |
+                        +------------+--------+--------+------------+
+                                              |
+                    +-------------------------+-------------------------+
+                    |                                                   |
+                    v                                                   v
+    +----------------------------------+          +----------------------------------+
+    | P4: generate_cli_dashboard       |          | P5: generate_json_payload         |
+    |  - format summary + level counts |          |  - build telemetry_payload dict   |
+    |  - print incident timeline feed  |          |  - write triage_*.json to disk    |
+    +----------------------------------+          +----------------------------------+
+                    |                                                   |
+                    v                                                   v
+        ( Terminal Output )                              ( triage_*.json File )
+```
+
 ## Requirements
 
 - Python 3.6+

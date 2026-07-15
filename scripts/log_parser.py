@@ -1,15 +1,29 @@
-#Log Parser
+#!/usr/bin/env python3
+"""
+DevOps Triage Utility - Log Parser Engine
+Author: Nneka Lyn <nneka.e.lyn@gmail.com>
+Version: 1.0.0
+
+Description:
+    A resilient, high-performance CLI utility designed to scan, validate,
+    and parse unstructured log directories. Outputs structured JSON
+    telemetry for system ingestion and a CLI summary.
+
+Usage:
+    python scripts/log_parser.py <target_directory> [--output <output_directory>]
+"""
 
 import argparse
 import datetime
 import json
-import platform
 import os
+import platform
 import re
 from collections import Counter
 
+
 def dir_validation(path):
-    """ Validates if provided target path is a directory.
+    """Validates if provided target path is a directory.
     Function is called by parse_cli_arguments()
     Args:
         path(str): absolute or relative target directory path.
@@ -26,24 +40,26 @@ def dir_validation(path):
 
 
 def parse_cli_arguments():
-    """ Configures the CLI entry gate and extracts execution variables.
+    """Configures the CLI entry gate and extracts execution variables.
 
     Returns:
         tuple[str, str | None]
             - target_dir: validated path of sweep directory
             - output (str or None): Destination path for telemetry serialization."""
-    parser = argparse.ArgumentParser(
-        description = "Flat Directory Log Parser"
-    )
+    parser = argparse.ArgumentParser(description="Flat Directory Log Parser")
     # Registered the validator function directly as a type factory callback rule
     # to dynamically execute the disk checks during terminal evaluation.
-    parser.add_argument("target_dir", help = "Path to the unorganized target dir "
-                                             "to sweep for logs", type = dir_validation
-                        )
-    parser.add_argument("-o", "--output", help = "Optional destination path to"
-                                                 " write structured JSON report",
-                        default = None
-                        )
+    parser.add_argument(
+        "target_dir",
+        help="Path to the unorganized target dir to sweep for logs",
+        type=dir_validation,
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Optional destination path to write structured JSON report",
+        default=None,
+    )
     args = parser.parse_args()
     path = args.target_dir
     output = args.output
@@ -56,17 +72,18 @@ def directory_sweeper(path):
     path (str): validated path to target directory path to unorganized log files
     Yields:
          str: OS-agnostic absolute file path verified to be text data
-       """
+    """
     with os.scandir(path) as entries:
         for entry in entries:
             if entry.is_file():
                 if not entry.is_symlink():
                     file_path = entry.path
                     file_name_lower = entry.name.lower()
-                    if file_name_lower.endswith(('.txt', '.log')):
+                    if file_name_lower.endswith((".txt", ".log")):
                         yield file_path
-                    elif file_name_lower.count('.') < 1:
+                    elif file_name_lower.count(".") < 1:
                         yield file_path
+
 
 def parsing_gate(file_path):
     """Opens a streaming pipeline into a text log to extract structured records.
@@ -77,28 +94,29 @@ def parsing_gate(file_path):
     Returns:
         dict: A structured summary status report of parsing successes, aggregated
         counters, and an array of malformed lines
-        """
+    """
     local_counts = Counter()
     local_malformed = []
     local_records = []
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             for line_num, line in enumerate(file, 1):
                 try:
-                    log = re.search(r"^"
-                                    r"(\d{4}-\d{2}-\d{2})"
-                                    r"\s+\[(\w+)]\s+(.*)"
-                                    r"$", line)
+                    log = re.search(
+                        r"^"
+                        r"(\d{4}-\d{2}-\d{2})"
+                        r"\s+\[(\w+)]\s+(.*)"
+                        r"$",
+                        line,
+                    )
                     if log is None:
                         local_malformed.append({"file": file_path, "line": line_num})
                         continue
                     date, log_level, message = log.group(1), log.group(2), log.group(3)
                     local_counts[log_level] += 1
-                    local_records.append({
-                        "date": date,
-                        "level": log_level,
-                        "message": message
-                    })
+                    local_records.append(
+                        {"date": date, "level": log_level, "message": message}
+                    )
                 except Exception as e:
                     print(f"Unexpected error parsing line {line_num}: {e}")
                     continue
@@ -106,16 +124,20 @@ def parsing_gate(file_path):
             "status": "success",
             "log_level": local_counts,
             "malformed": local_malformed,
-            "parsed_records": local_records
+            "parsed_records": local_records,
         }
     except (PermissionError, FileNotFoundError, UnicodeDecodeError):
-        return {"status": "failed", "log_level": Counter(),
-                "malformed": [],"parsed_records": []
-                }
+        return {
+            "status": "failed",
+            "log_level": Counter(),
+            "malformed": [],
+            "parsed_records": [],
+        }
+
 
 def generate_cli_dashboard(total_files, log_counts, malformed_records, parsed_records):
     """Channel 1: Prints a clean, human-readable terminal summary. Designed for triage
-    engineers needing immediate system insight. """
+    engineers needing immediate system insight."""
     print("=" * 60)
     print("                CLI METRICS SUMMARY                 ")
     print("=" * 60)
@@ -139,8 +161,13 @@ def generate_cli_dashboard(total_files, log_counts, malformed_records, parsed_re
             print("-" * 60)
 
 
-def generate_json_payload(output_filename, total_files_processed,global_log_counts,
-                          global_malformed_records, global_parsed_records):
+def generate_json_payload(
+    output_filename,
+    total_files_processed,
+    global_log_counts,
+    global_malformed_records,
+    global_parsed_records,
+):
     """Channel 2: Exports structured telemetry optimized for
     downstream ingestion engines."""
     current_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -161,8 +188,8 @@ def generate_json_payload(output_filename, total_files_processed,global_log_coun
         json.dump(telemetry_payload, json_file, indent=4)
         print(f"Successfully generated '{output_filename}' ")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     total_files_processed = 0
     global_log_counts = Counter()
     global_malformed_records = []
@@ -185,7 +212,7 @@ if __name__ == "__main__":
         total_files_processed,
         global_log_counts,
         global_malformed_records,
-        global_parsed_records
+        global_parsed_records,
     )
 
     folder_context = os.path.basename(os.path.normpath(path))

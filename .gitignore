@@ -1,2 +1,13 @@
 .venv/
 .idea/
+.vscode/
+
+# ignore dynamically local enterprise outputs
+artifacts/
+outputs/
+reports/
+*.json
+
+# Ignore python cache files
+--pycache--/
+*.p
